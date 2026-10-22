@@ -1,3 +1,4 @@
+import os
 import sys
 import requests
 import yaml
@@ -9,7 +10,18 @@ BASE_URL = 'https://portal.ufsm.br/mobile/webservice'
 
 def read_config() -> dict:
     with open('config.yaml', 'r') as document:
-        return yaml.safe_load(document)
+        config = yaml.safe_load(document)
+
+    # Dados sensíveis ficam nos secrets do repositório, não no config.yaml
+    for key, variable in (('device-id', 'DEVICE_ID'), ('message-token', 'MESSAGE_TOKEN')):
+        value = os.environ.get(variable)
+
+        if not value:
+            sys.exit(f'Variável de ambiente {variable} não definida. Crie o secret {variable} no repositório.')
+
+        config['environment'][key] = value
+
+    return config
 
 def is_weekday(date: datetime, weekday: str) -> bool:
     return date.strftime('%a') == weekday
