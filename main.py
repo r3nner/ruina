@@ -143,21 +143,30 @@ if len(tomorrow_schedules) != 0:
 
             statuses = schedule_meal(access_token, tomorrow, tomorrow, schedule)
 
+            if not isinstance(statuses, list):
+                print(f'[Erro] Resposta inesperada da API: {statuses}')
+                failed = True
+                continue
+
             for status in statuses:
+                if 'dataRefAgendada' not in status:
+                    print(f"[Erro] Resposta inesperada da API para o RU {schedule['restaurant']}: {status}")
+                    failed = True
+                    continue
+
                 date = datetime.strptime(status['dataRefAgendada'], '%Y-%m-%d %H:%M:%S')
                 message = (
                     f"{date.strftime('%d/%m/%Y')} - "
-                    f"RU {schedule['restaurant']} ({status['tipoRefeicao']}): "
+                    f"RU {schedule['restaurant']} ({status.get('tipoRefeicao')}): "
                 )
 
-                if status['sucesso']:
+                if status.get('sucesso'):
                     print(message + 'Agendado com sucesso.')
                 else:
-                    print('[Erro] ' + message + status['impedimento'] + '.')
+                    print('[Erro] ' + message + f"{status.get('impedimento')}.")
                     failed = True
 
         if failed:
             sys.exit(1)
 else:
     print('Não há nenhuma refeição para ser agendada amanhã.')
-
